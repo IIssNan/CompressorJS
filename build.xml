@@ -3,19 +3,20 @@
     <property name="dir.lib" value="${basedir}/lib" />
     <property name="dir.tmp" value="${basedir}/tmp" />
 
-    <fail unless="dir.source" message="dir.source Must be specified!"/>
+    <fail unless="dir.source" message="Property dir.source Must be specified!"/>
+    <property name="dir.source" value="${dir.source}" />
 
     <!-- 参数信息 -->
-    <property name="dir.source" value="${dir.source}" />
-    <property name="dir.output" value="${dir.output}" />
-    <property name="file.includes" value="${file.includes}" />
-    <property name="file.excludes" value="${file.excludes}" />
-    <property name="file.destname" value="${file.destname}" />
+    <property name="dir.output" value="${basedir}/output" />
+    <property name="file.includes" value="*.js" />
+    <property name="file.excludes" value="" />
+    <property name="file.destname" value="script" />
     
     <target name="init">
         <tstamp />
         <echo>Start Compressing...</echo>
         <mkdir dir="${dir.tmp}" />
+        <mkdir dir="${dir.output}" />
     </target>
 
     <taskdef name="jslint" classname="com.googlecode.jslint4java.ant.JSLintTask" classpath="${dir.lib}/jslint4java-2.0.0.jar" />
@@ -51,7 +52,7 @@
     </target>
 
     <target name="clean">
-        <delete file="${dir.tmp}/${file.destname}.js" />
+        <delete dir="${dir.tmp}" />
     </target>
 
     <target name="run" depends="init, compress, clean" />
