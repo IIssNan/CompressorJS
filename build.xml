@@ -11,10 +11,14 @@
     <property name="file.includes" value="*.js" />
     <property name="file.excludes" value="" />
     <property name="file.destname" value="script" />
+
+    <!--skip.lint 开关属性，是否跳过lint-->
     <property name="skip.lint" value="false" />
     <condition property="skip.lint.true">
         <equals arg1="${skip.lint}" arg2="true" />
     </condition>
+
+    <!--skip.compress开关属性，是否跳过压缩-->
     <property name="skip.compress" value="false" />
     <condition property="skip.compress.true">
         <equals arg1="${skip.compress}" arg2="true" />
@@ -22,30 +26,43 @@
 
     <target name="init">
         <tstamp />
-        <echo>Start Compressing...</echo>
+        <echo>==========================================================</echo>
+        <echo>Mission Start</echo>
         <mkdir dir="${dir.tmp}" />
         <mkdir dir="${dir.output}" />
     </target>
 
     <taskdef name="jslint" classname="com.googlecode.jslint4java.ant.JSLintTask" classpath="${dir.lib}/jslint4java-2.0.0.jar" />
-    <target name="lint" if="skip.lint.true">
+    <target name="lint" unless="skip.lint.true">
         <jslint haltOnFailure="false" options="white">
             <formatter type="plain" />
-            <fileset dir="${dir.source}" includes="${file.includes}" excludes="*jquery*.js, *qunit*.js, ${file.excludes}" />
+            <fileset dir="${dir.source}" includes="${file.includes}" excludes="${file.excludes}" />
         </jslint>
     </target>
 
-    <target name="concat">
+    <!-- concat后的文件用于压缩-->
+    <target name="concatForCompress">
         <concat destfile="${dir.tmp}/${file.destname}.js">
             <fileset
                     dir="${dir.source}"
                     includes="${file.includes}"
-                    excludes="*.min.js, *jquery*.js, *qunit*.js, ${file.excludes}"
+                    excludes="${file.excludes}"
              />
         </concat>
     </target>
 
-    <target name="compress" depends="concat" if="skip.compress.true">
+    <!--concat后的文件是直接输出-->
+    <target name="concatWithoutCompress">
+        <concat destfile="${dir.output}/${file.destname}.js">
+            <fileset
+                    dir="${dir.source}"
+                    includes="${file.includes}"
+                    excludes="${file.excludes}"
+             />
+        </concat>
+    </target>
+
+    <target name="compress" depends="concatForCompress">
         <property name="google-compiler" value="${dir.lib}/compiler.jar" />
         <apply executable="java" dest="${dir.output}">
             <fileset dir="${dir.tmp}" includes="${file.destname}.js" />
@@ -63,5 +80,12 @@
         <delete dir="${dir.tmp}" />
     </target>
 
-    <target name="run" depends="init, compress, clean" />
+    <target name="-runWithoutCompress" if="skip.compress.true">
+        <antcall target="concatWithoutCompress" />
+    </target>
+    <target name="-runWithCompress" unless="skip.compress.true">
+        <antcall target="compress" />
+    </target>
+
+    <target name="run" depends="init, -runWithCompress, -runWithoutCompress, clean" />
 </project>
