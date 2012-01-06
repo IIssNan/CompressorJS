@@ -1,13 +1,12 @@
 <?xml version="1.0" ?>
 <project name="JS Compressor" basedir="." default="run">
-    <property name="dir.lib" value="${basedir}/lib" />
-    <property name="dir.tmp" value="${basedir}/tmp" />
+    <property name="dir.lib" location="${basedir}/lib" />
+    <property name="dir.tmp" location="${basedir}/tmp" />
 
     <fail unless="dir.source" message="Property dir.source Must be specified!"/>
-    <property name="dir.source" value="${dir.source}" />
 
     <!-- 参数信息 -->
-    <property name="dir.output" value="${basedir}/output" />
+    <property name="dir.output" location="${basedir}/output" />
     <property name="file.includes" value="*.js" />
     <property name="file.excludes" value="" />
     <property name="file.destname" value="script" />
