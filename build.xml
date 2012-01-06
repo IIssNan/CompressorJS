@@ -63,14 +63,14 @@
 
     <target name="compress" depends="concatForCompress">
         <property name="google-compiler" value="${dir.lib}/compiler.jar" />
-        <apply executable="java" dest="${dir.output}">
+        <apply executable="java" dest="${dir.tmp}" force="true">
             <fileset dir="${dir.tmp}" includes="${file.destname}.js" />
             <arg line="-jar" />
             <arg path="${google-compiler}" />
             <arg line="--js" />
             <srcfile />
             <arg line="--js_output_file" />
-            <mapper type="glob" from="*.js" to="*.min.js" />
+            <mapper type="identity"/>
             <targetfile />
         </apply>
     </target>
