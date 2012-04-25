@@ -1,15 +1,23 @@
 <?xml version="1.0" ?>
 <project name="JS Compressor" basedir="." default="run">
-    <property name="dir.lib" location="${basedir}/lib" />
-    <property name="dir.tmp" location="${basedir}/tmp" />
 
     <fail unless="dir.source" message="Property dir.source Must be specified!"/>
+
+    <property name="dir.lib" location="${basedir}/lib" />
+    <property name="dir.tmp" location="${basedir}/tmp" />
 
     <!-- 参数信息 -->
     <property name="dir.output" location="${basedir}/output" />
     <property name="file.includes" value="*.js" />
     <property name="file.excludes" value="" />
     <property name="file.destname" value="script" />
+
+    <!--install Ant-Contrib-->
+    <taskdef resource="net/sf/antcontrib/antlib.xml">
+        <classpath>
+            <pathelement location="${dir.lib}/ant-contrib-1.0b3.jar"/>
+        </classpath>
+    </taskdef>
 
     <!--skip.lint 开关属性，是否跳过lint-->
     <property name="skip.lint" value="false" />
@@ -25,8 +33,6 @@
 
     <target name="init">
         <tstamp />
-        <echo>==========================================================</echo>
-        <echo>Mission Start</echo>
         <mkdir dir="${dir.tmp}" />
         <mkdir dir="${dir.output}" />
     </target>
