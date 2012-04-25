@@ -6,30 +6,32 @@
     <property name="dir.lib" location="${basedir}/lib" />
     <property name="dir.tmp" location="${basedir}/tmp" />
 
-    <!-- 参数信息 -->
-    <property name="dir.output" location="${basedir}/output" />
-    <property name="file.includes" value="*.js" />
-    <property name="file.excludes" value="" />
-    <property name="file.destname" value="script" />
-
-    <!--install Ant-Contrib-->
+    <!--Install Ant-Contrib-->
     <taskdef resource="net/sf/antcontrib/antlib.xml">
         <classpath>
             <pathelement location="${dir.lib}/ant-contrib-1.0b3.jar"/>
         </classpath>
     </taskdef>
 
-    <!--skip.lint 开关属性，是否跳过lint-->
-    <property name="skip.lint" value="false" />
-    <condition property="skip.lint.true">
-        <equals arg1="${skip.lint}" arg2="true" />
-    </condition>
+    <!--Install JsLint-->
+    <taskdef name="jslint" classname="com.googlecode.jslint4java.ant.JSLintTask">
+        <classpath>
+            <pathelement location="${dir.lib}/jslint4java-2.0.0.jar" />
+        </classpath>
+    </taskdef>
 
-    <!--skip.compress开关属性，是否跳过压缩-->
-    <property name="skip.compress" value="false" />
-    <condition property="skip.compress.true">
-        <equals arg1="${skip.compress}" arg2="true" />
-    </condition>
+
+
+    <!-- 参数信息 -->
+    <property name="dir.output" location="${basedir}/output" />
+    <property name="file.includes" value="*.js" />
+    <property name="file.excludes" value="" />
+    <property name="file.destname" value="script" />
+
+    <!--${is.debug}'s default value is FALSE-->
+    <property name="is.debug" value="false" />
+
+
 
     <target name="init">
         <tstamp />
@@ -37,37 +39,75 @@
         <mkdir dir="${dir.output}" />
     </target>
 
-    <taskdef name="jslint" classname="com.googlecode.jslint4java.ant.JSLintTask" classpath="${dir.lib}/jslint4java-2.0.0.jar" />
-    <target name="lint" unless="skip.lint.true">
+    <target name="clean">
+        <delete dir="${dir.tmp}" />
+    </target>
+
+    <target name="build">
+        <if>
+            <equals arg1="${is.debug}" arg2="true" />
+            <then>
+                <property name="dir.output.concatenate" location="${dir.output}" />
+                <antcall target="concat" />
+            </then>
+            <else>
+                <property name="dir.output.concatenate" location="${dir.tmp}" />
+                <antcall target="concat" />
+                <antcall target="compress" />
+            </else>
+        </if>
+    </target>
+
+    <!--Add Lint task-->
+    <target name="run">
+        <antcall target="clean" />
+        <antcall target="init" />
+        <antcall target="build" />
+    </target>
+
+    <target name="lint">
         <jslint haltOnFailure="false" options="white">
             <formatter type="plain" />
             <fileset dir="${dir.source}" includes="${file.includes}" excludes="${file.excludes}" />
         </jslint>
     </target>
 
-    <!-- concat后的文件用于压缩-->
-    <target name="concatForCompress">
-        <concat destfile="${dir.tmp}/${file.destname}.js">
-            <fileset
-                    dir="${dir.source}"
-                    includes="${file.includes}"
-                    excludes="${file.excludes}"
-             />
-        </concat>
+    <!--Concatenate files-->
+    <target name="concat">
+        <if>
+            <equals arg1="${file.includes}" arg2="*" />
+            <then>
+                <concat fixlastline="true" destfile="${dir.output.concatenate}/${file.destname}.js">
+                    <fileset dir="${dir.source}" includes="${file.includes}" />
+                </concat>
+            </then>
+            <elseif>
+                <equals arg1="${file.includes}" arg2="*.js" />
+                <then>
+                    <concat fixlastline="true" destfile="${dir.output.concatenate}/${file.destname}.js">
+                        <fileset dir="${dir.source}" includes="${file.includes}" />
+                    </concat>
+                </then>
+            </elseif>
+            <else>
+                <var name="index" value="1" />
+                <mkdir dir="${dir.tmp}/source" />
+                <for list="${file.includes}" param="file" trim="true">
+                    <sequential>
+                        <math result="index" operand1="${index}" operand2="1" operation="+" datatype="int" />
+                        <copy file="${dir.source}/@{file}" tofile="${dir.tmp}/source/${index}_@{file}" />
+                    </sequential>
+                </for>
+                <concat fixlastline="true" destfile="${dir.output.concatenate}/${file.destname}.js">
+                    <fileset dir="${dir.tmp}/source" />
+                </concat>
+                <delete dir="${dir.tmp}/source" />
+            </else>
+        </if>
     </target>
 
-    <!--concat后的文件是直接输出-->
-    <target name="concatWithoutCompress">
-        <concat destfile="${dir.output}/${file.destname}.js">
-            <fileset
-                    dir="${dir.source}"
-                    includes="${file.includes}"
-                    excludes="${file.excludes}"
-             />
-        </concat>
-    </target>
-
-    <target name="compress" depends="concatForCompress">
+    <!--Compress files-->
+    <target name="compress">
         <property name="google-compiler" value="${dir.lib}/compiler.jar" />
         <apply executable="java" dest="${dir.output}" force="true">
             <fileset dir="${dir.tmp}" includes="${file.destname}.js" />
@@ -80,17 +120,4 @@
             <targetfile />
         </apply>
     </target>
-
-    <target name="clean">
-        <delete dir="${dir.tmp}" />
-    </target>
-
-    <target name="-runWithoutCompress" if="skip.compress.true">
-        <antcall target="concatWithoutCompress" />
-    </target>
-    <target name="-runWithCompress" unless="skip.compress.true">
-        <antcall target="compress" />
-    </target>
-
-    <target name="run" depends="init, -runWithCompress, -runWithoutCompress, clean" />
 </project>
